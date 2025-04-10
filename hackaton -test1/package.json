@@ -1,0 +1,14 @@
+{
+  "name": "image-analysis-app",
+  "version": "1.0.0",
+  "description": "Image analysis application using Google's Gemini AI",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.1.3",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1"
+  }
+}

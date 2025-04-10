@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .upload-area {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            margin: 20px 0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: #666;
+        }
+        #preview {
+            max-width: 100%;
+            margin-top: 20px;
+            display: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result-container {
+            margin-top: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .result-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .result-header i {
+            font-size: 18px;
+        }
+        .result-content {
+            padding: 20px;
+            background-color: #f8f9fa;
+            min-height: 50px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            font-size: 16px;
+        }
+        .text-block {
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #ffffff;
+            border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .code-block {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            position: relative;
+        }
+        .code-block-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #3b4048;
+        }
+        .code-language {
+            background-color: #3b4048;
+            color: #abb2bf;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .copy-button {
+            background-color: #3b4048;
+            color: #abb2bf;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.3s;
+        }
+        .copy-button:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .copy-button.copied {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .copy-button i {
+            font-size: 14px;
+        }
+        .code-block code {
+            display: block;
+            white-space: pre;
+        }
+        /* Syntax highlighting colors */
+        .keyword { color: #c678dd; }
+        .string { color: #98c379; }
+        .comment { color: #5c6370; }
+        .number { color: #d19a66; }
+        .function { color: #61afef; }
+        .operator { color: #56b6c2; }
+        .punctuation { color: #abb2bf; }
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4CAF50;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .prompt-container {
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .example-prompts {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .example-prompts span {
+            cursor: pointer;
+            color: #4CAF50;
+            text-decoration: underline;
+            margin-right: 10px;
+            transition: color 0.3s;
+        }
+        .example-prompts span:hover {
+            color: #45a049;
+        }
+        .error-message {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Image Analysis</h1>
+        <div class="upload-area" id="uploadArea">
+            <p>Click or drag an image here to upload</p>
+            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        </div>
+        <img id="preview" alt="Preview">
+        
+        <div class="prompt-container">
+            <label for="prompt">Enter your prompt:</label>
+            <textarea id="prompt" placeholder="Describe what you want to know about the image..."></textarea>
+            <div class="example-prompts">
+                Try these examples:
+                <span onclick="useExample('What is in this image?')">What is in this image?</span>
+                <span onclick="useExample('Describe this image in detail')">Describe this image in detail</span>
+                <span onclick="useExample('What emotions does this image convey?')">What emotions does this image convey?</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="analyzeBtn" disabled>Analyze Image</button>
+        </div>
+        
+        <div class="result-container" id="resultContainer" style="display: none;">
+            <div class="result-header">
+                <i class="fas fa-robot"></i>
+                AI Analysis Result
+            </div>
+            <div class="result-content" id="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const preview = document.getElementById('preview');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const resultDiv = document.getElementById('result');
+        const resultContainer = document.getElementById('resultContainer');
+        const promptTextarea = document.getElementById('prompt');
+
+        function useExample(prompt) {
+            promptTextarea.value = prompt;
+        }
+
+        function showLoading() {
+            resultContainer.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading"><div class="loading-spinner"></div>Analyzing image...</div>';
+        }
+
+        function showError(message) {
+            resultContainer.style.display = 'block';
+            resultDiv.innerHTML = `<div class="error-message">${message}</div>`;
+        }
+
+        function formatCodeBlock(code, language) {
+            // Basic syntax highlighting
+            const highlightedCode = code
+                .replace(/\b(function|if|else|for|while|return|const|let|var)\b/g, '<span class="keyword">$1</span>')
+                .replace(/"([^"]*)"/g, '<span class="string">"$1"</span>')
+                .replace(/'([^']*)'/g, '<span class="string">\'$1\'</span>')
+                .replace(/\b(\d+)\b/g, '<span class="number">$1</span>')
+                .replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g, '<span class="function">$1</span>(')
+                .replace(/([+\-*/=<>!&|])/g, '<span class="operator">$1</span>')
+                .replace(/([{}[\]();,.])/g, '<span class="punctuation">$1</span>')
+                .replace(/\/\/.*$/gm, '<span class="comment">$&</span>')
+                .replace(/\/\*[\s\S]*?\*\//g, '<span class="comment">$&</span>');
+
+            return `
+                <div class="code-block">
+                    <div class="code-block-header">
+                        <span class="code-language">${language || 'text'}</span>
+                        <button class="copy-button" onclick="copyCode(this, \`${escapeHtml(code)}\`)">
+                            <i class="fas fa-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <code>${highlightedCode}</code>
+                </div>
+            `;
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function copyCode(button, code) {
+            navigator.clipboard.writeText(code).then(() => {
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                    button.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy code: ', err);
+                button.innerHTML = '<i class="fas fa-times"></i> Failed';
+                setTimeout(() => {
+                    button.innerHTML = '<i class="fas fa-copy"></i> Copy';
+                }, 2000);
+            });
+        }
+
+        function formatResponse(text) {
+            // Split the text into blocks of code and regular text
+            const blocks = text.split(/(```[\s\S]*?```)/);
+            let formattedText = '';
+
+            blocks.forEach(block => {
+                if (block.startsWith('```')) {
+                    // Extract language and code
+                    const match = block.match(/```(\w+)?\n([\s\S]*?)```/);
+                    if (match) {
+                        const language = match[1] || 'text';
+                        const code = match[2];
+                        formattedText += formatCodeBlock(code, language);
+                    }
+                } else if (block.trim()) {
+                    // Format regular text
+                    formattedText += `<div class="text-block">${block}</div>`;
+                }
+            });
+
+            return formattedText;
+        }
+
+        function showResult(text) {
+            resultContainer.style.display = 'block';
+            resultDiv.innerHTML = formatResponse(text);
+        }
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#666';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = '#ccc';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = '#ccc';
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                handleFile(file);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                analyzeBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        analyzeBtn.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            const prompt = promptTextarea.value.trim();
+            if (!prompt) {
+                alert('Please enter a prompt');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('prompt', prompt);
+
+            try {
+                showLoading();
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    showResult(data.result);
+                }
+            } catch (error) {
+                showError('Error analyzing image: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html> 
